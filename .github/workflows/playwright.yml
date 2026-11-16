@@ -1,5 +1,5 @@
 
-name: Playwright E2E Tests
+name: Playwright E2E Tests + Live HTML Report
 
 on:
   push:
@@ -11,11 +11,22 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: playwright-pages
+  cancel-in-progress: false
+
 jobs:
   playwright-tests:
     name: Run Playwright Tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
+
+    permissions:
+      contents: read
+      pages: write
+
+    outputs:
+      report_available: ${{ steps.report_check.outputs.available }}
 
     env:
       BASE_URL: https://shop-zone-ecommerce-demo.vercel.app
@@ -39,10 +50,11 @@ jobs:
       - name: Run TypeScript checks
         run: npm run typecheck
 
-      - name: Run Playwright tests
+      - name: Run Playwright tests against ShopZone
+        id: playwright
         run: npm test
 
-      - name: Upload test reports
+      - name: Upload test reports as workflow artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -52,3 +64,93 @@ jobs:
             test-results/
           retention-days: 14
           if-no-files-found: ignore
+
+      - name: Ensure a report page exists
+        if: always()
+        id: report_check
+        shell: bash
+        run: |
+          if [[ ! -f playwright-report/index.html ]]; then
+            mkdir -p playwright-report
+            cat > playwright-report/index.html <<EOF
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Playwright E2E Test Report</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                background: #101114;
+                color: #f5f5f5;
+                margin: 0;
+                padding: 48px 20px;
+              }
+              main {
+                max-width: 760px;
+                margin: 0 auto;
+                background: #1b1d22;
+                border: 1px solid #343741;
+                border-radius: 14px;
+                padding: 28px;
+              }
+              h1 { margin-top: 0; }
+              p { line-height: 1.6; color: #c8cbd2; }
+              a { color: #78adff; }
+            </style>
+          </head>
+          <body>
+            <main>
+              <h1>Playwright report not generated</h1>
+              <p>
+                This workflow run did not produce a Playwright HTML report.
+                Setup or TypeScript validation may have stopped the run
+                before the tests started.
+              </p>
+              <p>
+                Open the
+                <a href="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}">
+                  GitHub Actions run logs
+                </a>
+                to see the exact result.
+              </p>
+            </main>
+          </body>
+          </html>
+          EOF
+          fi
+
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
+      - name: Configure GitHub Pages
+        if: always() && github.event_name != 'pull_request' && steps.report_check.outputs.available == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload HTML report for GitHub Pages
+        if: always() && github.event_name != 'pull_request' && steps.report_check.outputs.available == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./playwright-report
+
+  deploy-report:
+    name: Publish Live Playwright HTML Report
+    needs: playwright-tests
+
+    if: always() && github.event_name != 'pull_request' && needs.playwright-tests.outputs.report_available == 'true'
+
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy Playwright HTML report
+        id: deployment
+        uses: actions/deploy-pages@v4
