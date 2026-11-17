@@ -1,4 +1,15 @@
+
 import { defineConfig, devices } from "@playwright/test";
+
+const baseURL =
+  process.env.BASE_URL ||
+  "https://shop-zone-ecommerce-demo.vercel.app";
+
+const hostname = new URL(baseURL).hostname;
+
+const isLocalApplication =
+  hostname === "127.0.0.1" ||
+  hostname === "localhost";
 
 export default defineConfig({
   testDir: "./tests",
@@ -9,7 +20,7 @@ export default defineConfig({
 
   retries: process.env.CI ? 2 : 0,
 
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
 
   reporter: [
     ["list"],
@@ -17,11 +28,7 @@ export default defineConfig({
   ],
 
   use: {
-    // Use the live application by default.
-    // BASE_URL can override it for other environments.
-    baseURL:
-      process.env.BASE_URL ||
-      "https://shop-zone-ecommerce-demo.vercel.app",
+    baseURL,
 
     trace: "retain-on-failure",
 
@@ -31,4 +38,23 @@ export default defineConfig({
 
     ...devices["Desktop Chrome"],
   },
+
+  // Automatically start React for local testing.
+  // Do not start a local server for Vercel tests.
+  ...(isLocalApplication
+    ? {
+        webServer: {
+          command:
+            "npm run dev -- --host 127.0.0.1 --port 5173 --strictPort",
+
+          cwd: "../ecommerce-demo-app",
+
+          url: "http://127.0.0.1:5173",
+
+          reuseExistingServer: !process.env.CI,
+
+          timeout: 120_000,
+        },
+      }
+    : {}),
 });
