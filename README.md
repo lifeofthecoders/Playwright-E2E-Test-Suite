@@ -1,8 +1,8 @@
 # Playwright E2E Test Suite - E-Commerce Checkout Flow
 
-An end-to-end (E2E) test suite for a mock e-commerce web application, built with [Playwright](https://playwright.dev/) and the **Page Object Model (POM)**.
+An end-to-end (E2E) test suite for the ShopZone demonstration e-commerce application, built with [Playwright](https://playwright.dev/) and the **Page Object Model (POM)**.
 
-The suite validates the complete checkout journey and key failure scenarios, generates debugging artifacts on failure, and supports automated execution through GitHub Actions.
+The suite validates the checkout journey and key failure scenarios, captures debugging artifacts when tests fail, and supports automated execution through GitHub Actions.
 
 ## Objective
 
@@ -16,13 +16,9 @@ This project demonstrates practical QA automation and DevOps testing practices:
 
 ## Application Under Test
 
-**Application Name:** ShopZone E-Commerce Demo
-
-**Live Application:**  
-https://shop-zone-ecommerce-demo.vercel.app/
-
-**Application Source Code:**  
-https://github.com/lifeofthecoders/ShopZone-Ecommerce-Demo
+**Application:** ShopZone E-Commerce Demo  
+**Live application:** https://shop-zone-ecommerce-demo.vercel.app/  
+**Application source code:** https://github.com/lifeofthecoders/ShopZone-Ecommerce-Demo
 
 The ShopZone application is a demonstration e-commerce website used as the application under test for this automation project.
 
@@ -38,10 +34,9 @@ The ShopZone application is a demonstration e-commerce website used as the appli
 
 ## Automation Repository
 
-**GitHub Repository:**  
-https://github.com/lifeofthecoders/Playwright-E2E-Test-Suite
+**GitHub repository:** https://github.com/lifeofthecoders/Playwright-E2E-Test-Suite
 
-This repository contains the Playwright end-to-end automation test suite for validating the ShopZone E-Commerce Demo application.
+This repository contains the Playwright end-to-end automation test suite for validating the ShopZone E-Commerce Demo application. The React application and the Playwright automation suite are maintained in separate repositories and local folders.
 
 ## Technology Stack
 
@@ -55,28 +50,27 @@ This repository contains the Playwright end-to-end automation test suite for val
 ## Project Structure
 
 ```text
-.
+Playwright-E2E-Test-Suite/
 ├── tests/
-│   ├── pages/                  # Page Object classes
+│   ├── pages/                   # Page Object classes
 │   │   ├── BasePage.ts
 │   │   ├── LoginPage.ts
 │   │   ├── ProductsPage.ts
 │   │   ├── CartPage.ts
 │   │   ├── CheckoutPage.ts
 │   │   └── ConfirmationPage.ts
-│   │
 │   ├── specs/
-│   │   └── checkout.spec.ts    # E2E test scenarios
-│   │
+│   │   └── checkout.spec.ts     # E2E test scenarios
 │   └── fixtures/
-│       └── test-data.ts       # Centralized test data
-│
+│       └── test-data.ts         # Centralized test data
+├── scripts/
+│   └── publish-live-report.mjs  # Publishes and opens the GitHub Pages report
 ├── .github/
 │   └── workflows/
-│       └── playwright.yml    # GitHub Actions CI pipeline
-│
+│       └── playwright.yml       # GitHub Actions CI pipeline
 ├── playwright.config.ts
 ├── package.json
+├── package-lock.json
 ├── tsconfig.json
 ├── .gitignore
 ├── .env.example
@@ -85,19 +79,15 @@ This repository contains the Playwright end-to-end automation test suite for val
 
 ## The Target Application
 
-The test suite supports running against a locally hosted or deployed application through the `BASE_URL` environment variable.
+The test suite supports running against either the locally hosted application or the deployed application by using the `BASE_URL` environment variable.
 
-By default, the application is expected to be available at:
+| Environment | Application URL | Browser execution |
+|---|---|---|
+| Local | `http://127.0.0.1:5173` | Visible Google Chrome on your computer |
+| Live | `https://shop-zone-ecommerce-demo.vercel.app` | Visible Google Chrome on your computer |
+| GitHub Actions | `https://shop-zone-ecommerce-demo.vercel.app` | Headless Chromium on the GitHub runner |
 
-```text
-http://localhost:8080
-```
-
-The live ShopZone application is available at:
-
-```text
-https://shop-zone-ecommerce-demo.vercel.app/
-```
+The local React application is in the sibling folder `ecommerce-demo-app`. The Playwright test suite is in `Playwright-E2E-Test-Suite`.
 
 The application exposes the following pages and `data-testid` attributes:
 
@@ -109,18 +99,20 @@ The application exposes the following pages and `data-testid` attributes:
 | Checkout | `/checkout` | `shipping-address`, `payment-info`, `confirm-purchase-button` |
 | Confirmation | `/confirmation` | `order-confirmation-message` |
 
-> This repository contains the automation test suite only. The target application must be available separately before running the tests.
+> This repository contains the automation test suite only. The target application is maintained separately. For local testing, run the React application from the `ecommerce-demo-app` folder.
 
 ## Prerequisites
 
 - [Node.js](https://nodejs.org/) version 18 or newer.
 - npm package manager.
-- Playwright browsers installed.
-- Access to the target e-commerce application through the configured `BASE_URL`.
+- Google Chrome installed locally (the local configuration uses the installed Chrome browser).
+- Playwright browser dependencies installed for the local environment and CI.
+- Access to the target application through the configured `BASE_URL`.
+- GitHub CLI (`gh`) installed and authenticated if you want to publish the Live report using `npm run test:report:live`.
 
 ## Installation
 
-Clone the repository:
+Clone the automation repository:
 
 ```bash
 git clone https://github.com/lifeofthecoders/Playwright-E2E-Test-Suite.git
@@ -147,7 +139,7 @@ npx playwright install
 For Linux or CI environments, install browsers with their required system dependencies:
 
 ```bash
-npx playwright install --with-deps
+npx playwright install --with-deps chromium
 ```
 
 Optionally, copy the environment template and adjust the configuration:
@@ -156,33 +148,78 @@ Optionally, copy the environment template and adjust the configuration:
 cp .env.example .env
 ```
 
-## Running Tests
+## Run the Tests
 
-Make sure the target application is running and reachable through `BASE_URL`.
+The project supports two execution environments: **Local** and **Live**. Both commands run the test cases in a visible Google Chrome browser on your computer.
 
-Run the complete test suite:
+### Local Environment – Visible Chrome Execution
+
+Use two Git Bash terminals so that the React application and the Playwright test suite run separately.
+
+**Terminal 1 – Start the React application**
 
 ```bash
-npx playwright test
+cd /c/Projects/ecommerce-demo-app
+npm run dev
 ```
 
-Alternatively, use the npm test script:
+Keep this terminal running. Vite should make the application available at `http://127.0.0.1:5173`.
+
+**Terminal 2 – Run the Playwright suite**
+
+```bash
+cd /c/Projects/Playwright-E2E-Test-Suite
+
+BASE_URL=http://127.0.0.1:5173 npm test
+```
+
+Playwright opens Google Chrome and executes the test cases against your local React application.
+
+When the test run finishes, open the locally generated HTML report:
+
+```bash
+npm run test:report
+```
+
+The local HTML report is served by Playwright, usually at `http://localhost:9323`.
+
+> The Playwright configuration can also start the local Vite server automatically when it is not already running. Starting it in Terminal 1 is shown here to make the two-project run structure clear. If the server is already running, Playwright reuses it.
+
+### Live Environment – Visible Chrome Execution
+
+Run the tests against the deployed ShopZone application:
+
+```bash
+cd /c/Projects/Playwright-E2E-Test-Suite
+
+BASE_URL=https://shop-zone-ecommerce-demo.vercel.app npm test
+```
+
+Playwright opens Google Chrome on your computer and executes the test cases against the live Vercel application. No local React development server is required for this run.
+
+After the local visible test run finishes, publish the GitHub Actions report and open the public report:
+
+```bash
+npm run test:report:live
+```
+
+This command uses the GitHub CLI to trigger the existing GitHub Actions workflow, waits for the workflow and GitHub Pages deployment, and opens the public report:
+
+**Live HTML report:** https://lifeofthecoders.github.io/Playwright-E2E-Test-Suite/
+
+> **Important:** The visible Live test run and the GitHub Actions report run are separate executions. The first command runs the tests in Google Chrome on your computer. The `test:report:live` command triggers GitHub Actions, which re-runs the tests headlessly using the code committed and pushed to the `main` branch, then publishes that CI run's HTML report. Push the latest test changes to `main` before publishing if you want the public report to reflect those changes.
+
+### Run Without Specifying `BASE_URL`
+
+The configuration defaults to the live ShopZone application when `BASE_URL` is not supplied:
 
 ```bash
 npm test
 ```
 
-### Run Tests Against the Live Application
+For clarity and repeatability, use the explicit Local or Live commands above when running tests manually.
 
-To execute the tests against the deployed ShopZone application:
-
-```bash
-BASE_URL=https://shop-zone-ecommerce-demo.vercel.app npm test
-```
-
-This overrides the default local application URL without modifying `playwright.config.ts`.
-
-### TypeScript Validation
+## TypeScript Validation
 
 Run TypeScript checks:
 
@@ -190,43 +227,55 @@ Run TypeScript checks:
 npm run typecheck
 ```
 
-## Headed Mode
+## Headed Mode and Debugging
 
-Watch the browser while tests execute:
+The regular `npm test` command already runs in headed mode. To run Playwright directly in headed mode:
 
 ```bash
-npx playwright test --headed
+npm run test:headed
 ```
-
-## Debugging
 
 Run tests using the Playwright Inspector:
 
 ```bash
-npx playwright test --debug
+npm run test:debug
 ```
 
 The interactive UI mode is also available:
 
 ```bash
-npx playwright test --ui
+npm run test:ui
 ```
 
-## HTML Report
+## HTML Reports
 
-After a test execution, open the generated HTML report:
+### Local HTML Report
+
+After running the tests locally, open the generated report:
 
 ```bash
-npx playwright show-report
+npm run test:report
 ```
 
-The report provides details about test execution, including passed and failed test cases.
+This starts Playwright's local HTML report viewer. It is normally served at `http://localhost:9323` and shows details about the local test execution, including passed and failed test cases.
+
+### Public Live HTML Report
+
+To trigger the GitHub Actions workflow and publish its HTML report to GitHub Pages:
+
+```bash
+npm run test:report:live
+```
+
+The public report URL is:
+
+https://lifeofthecoders.github.io/Playwright-E2E-Test-Suite/
+
+`npx playwright show-report` (also used by `npm run test:report`) is a local report server. It does not serve the GitHub Pages URL. Use `npm run test:report:live` to trigger publication and open the public report.
 
 ## Trace Viewer
 
-Traces are configured to be captured on the first retry of a failing test.
-
-Open a trace file using:
+Traces are configured to be retained when a test fails. Open a trace file using:
 
 ```bash
 npx playwright show-trace path/to/trace.zip
@@ -258,7 +307,7 @@ Test flow:
 6. Confirm the purchase.
 7. Verify that the order confirmation message is visible.
 
-**Expected Result:** The checkout process completes successfully and the order confirmation is displayed.
+**Expected result:** The checkout process completes successfully and the order confirmation is displayed.
 
 ### 2. Empty Cart Checkout Prevention
 
@@ -272,7 +321,7 @@ Test flow:
 4. Verify that the empty cart validation message is displayed.
 5. Confirm that the user remains on the cart page.
 
-**Expected Result:** Checkout is prevented and the empty cart validation message is displayed.
+**Expected result:** Checkout is prevented and the empty cart validation message is displayed.
 
 ### 3. Expired Session and Cart Preservation
 
@@ -289,9 +338,9 @@ Test flow:
 7. Log in again.
 8. Verify that product `1` is still present in the cart.
 
-**Expected Result:** The application requires authentication again while preserving the cart contents after re-login.
+**Expected result:** The application requires authentication again while preserving the cart contents after re-login.
 
-## Continuous Integration
+## Continuous Integration and Live Report Publishing
 
 The GitHub Actions workflow is located at:
 
@@ -299,18 +348,24 @@ The GitHub Actions workflow is located at:
 .github/workflows/playwright.yml
 ```
 
-The workflow is configured to run on pushes and pull requests to the configured branches (`main`/`master`).
+The workflow runs on pushes and pull requests to `main`, and can also be started manually using `workflow_dispatch`.
 
 The CI pipeline performs the following steps:
 
-1. Checks out the repository.
-2. Sets up Node.js with npm caching.
+1. Checks out the automation repository.
+2. Sets up Node.js and npm caching.
 3. Installs project dependencies using `npm ci`.
-4. Installs Playwright browsers using `npx playwright install --with-deps`.
-5. Executes the test suite using `npx playwright test`.
-6. Uploads the `playwright-report/` and `test-results/` directories as build artifacts using `actions/upload-artifact@v4`.
+4. Installs Playwright Chromium and its system dependencies.
+5. Runs TypeScript validation using `npm run typecheck`.
+6. Executes the tests using `npm run test:ci` in headless mode against the live ShopZone application.
+7. Uploads the `playwright-report/` and `test-results/` directories as workflow artifacts.
+8. Deploys the HTML report to GitHub Pages for non-pull-request runs.
 
-The artifacts are configured with `if: always()` so reports and test results can be preserved even when tests fail.
+The report deployment job publishes the CI-generated report to:
+
+https://lifeofthecoders.github.io/Playwright-E2E-Test-Suite/
+
+The CI workflow uses `npm run test:ci` rather than `npm test` so that the GitHub runner executes headlessly. Local `npm test` uses visible Google Chrome.
 
 ## Failure Artifacts
 
@@ -318,8 +373,8 @@ The following debugging artifacts are configured in `playwright.config.ts`:
 
 - **Screenshots:** Captured only when a test fails.
 - **Videos:** Retained when a test fails.
-- **Traces:** Collected on the first retry for debugging.
-- **HTML Report:** Generated for test execution results.
+- **Traces:** Retained when a test fails.
+- **HTML report:** Generated for test execution results.
 
 Per-test artifacts are stored in:
 
@@ -375,15 +430,11 @@ If you'd like to connect, collaborate, or discuss QA, software testing, and test
 **Sumit Panchal**  
 **Senior Quality Analyst | Manual QA Engineer | Software Testing | 5+ Years Experience**
 
-📍 **Location:** Ahmedabad, Gujarat, India
-
-🌐 **Portfolio:** [https://lifeofthecoders.github.io/Sumit_Panchal_QA_Portfolio_Series/](https://lifeofthecoders.github.io/Sumit_Panchal_QA_Portfolio_Series/)
-
-💻 **GitHub:** [https://github.com/lifeofthecoders/Playwright-E2E-Test-Suite](https://github.com/lifeofthecoders/Playwright-E2E-Test-Suite)
-
-📧 **Email:** sumitpanchal5225@gmail.com
-
-🔗 **LinkedIn:** [linkedin.com/in/sumit-panchal-b790a8236](https://www.linkedin.com/in/sumit-panchal-b790a8236/)
+📍 **Location:** Ahmedabad, Gujarat, India  
+🌐 **Portfolio:** https://lifeofthecoders.github.io/Sumit_Panchal_QA_Portfolio_Series/  
+💻 **GitHub:** https://github.com/lifeofthecoders/Playwright-E2E-Test-Suite  
+📧 **Email:** sumitpanchal5225@gmail.com  
+🔗 **LinkedIn:** https://www.linkedin.com/in/sumit-panchal-b790a8236/
 
 ## ⭐ Support
 
@@ -409,24 +460,3 @@ Thank you for visiting my portfolio!
 ---
 
 **Note:** ShopZone is a demonstration application. Authentication and payment are simulated. No real payment is processed.
-
-
-Expected terminal arrangement
-Terminal 1 — React application
-Must stay running
-
-cd /c/Projects/ecommerce-demo-app
-npm run dev -- --host 127.0.0.1
-
-
-
-
-Terminal 2 — Playwright automation
-Run tests here
-
-cd /c/Projects/Playwright-E2E-Test-Suite
-BASE_URL=http://127.0.0.1:5173 npm test
-
-
-cd /c/Projects/Playwright-E2E-Test-Suite
-BASE_URL=https://shop-zone-ecommerce-demo.vercel.app npm test

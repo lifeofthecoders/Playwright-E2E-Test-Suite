@@ -4,11 +4,13 @@
   "description": "Playwright E2E test suite for an e-commerce checkout flow, built with the Page Object Model.",
   "type": "module",
   "scripts": {
-    "test": "playwright test",
+    "test": "playwright test --headed",
+    "test:ci": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
+    "test:report:live": "node scripts/publish-live-report.mjs",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [

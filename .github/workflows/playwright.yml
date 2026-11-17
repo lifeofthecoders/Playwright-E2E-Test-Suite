@@ -30,6 +30,7 @@ jobs:
 
     env:
       BASE_URL: https://shop-zone-ecommerce-demo.vercel.app
+      CI: true
 
     steps:
       - name: Checkout repository
@@ -52,7 +53,7 @@ jobs:
 
       - name: Run Playwright tests against ShopZone
         id: playwright
-        run: npm test
+        run: npm run test:ci
 
       - name: Upload test reports as workflow artifact
         if: always()
@@ -72,6 +73,7 @@ jobs:
         run: |
           if [[ ! -f playwright-report/index.html ]]; then
             mkdir -p playwright-report
+
             cat > playwright-report/index.html <<EOF
           <!doctype html>
           <html lang="en">

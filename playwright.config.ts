@@ -1,9 +1,11 @@
 
 import { defineConfig, devices } from "@playwright/test";
 
+const LOCAL_BASE_URL = "http://127.0.0.1:5173";
+const LIVE_BASE_URL = "https://shop-zone-ecommerce-demo.vercel.app";
+
 const baseURL =
-  process.env.BASE_URL ||
-  "https://shop-zone-ecommerce-demo.vercel.app";
+  process.env.BASE_URL?.trim() || LIVE_BASE_URL;
 
 const hostname = new URL(baseURL).hostname;
 
@@ -11,15 +13,21 @@ const isLocalApplication =
   hostname === "127.0.0.1" ||
   hostname === "localhost";
 
+const isCI = Boolean(process.env.CI);
+
+console.log("\n=================================");
+console.log(`Playwright Target: ${baseURL}`);
+console.log(`Environment: ${isLocalApplication ? "LOCAL" : "LIVE"}`);
+console.log(`Browser: ${isCI ? "Chromium (CI)" : "Google Chrome"}`);
+console.log(`Mode: ${isCI ? "HEADLESS" : "HEADED"}`);
+console.log("=================================\n");
+
 export default defineConfig({
   testDir: "./tests",
 
   fullyParallel: false,
-
-  forbidOnly: Boolean(process.env.CI),
-
-  retries: process.env.CI ? 2 : 0,
-
+  forbidOnly: isCI,
+  retries: isCI ? 2 : 0,
   workers: 1,
 
   reporter: [
@@ -31,16 +39,17 @@ export default defineConfig({
     baseURL,
 
     trace: "retain-on-failure",
-
     screenshot: "only-on-failure",
-
     video: "retain-on-failure",
 
     ...devices["Desktop Chrome"],
+
+    // Use installed Google Chrome for local execution.
+    // GitHub Actions uses the Playwright-installed Chromium.
+    ...(!isCI ? { channel: "chrome" } : {}),
   },
 
-  // Automatically start React for local testing.
-  // Do not start a local server for Vercel tests.
+  // Automatically start React only when testing localhost.
   ...(isLocalApplication
     ? {
         webServer: {
@@ -49,9 +58,9 @@ export default defineConfig({
 
           cwd: "../ecommerce-demo-app",
 
-          url: "http://127.0.0.1:5173",
+          url: LOCAL_BASE_URL,
 
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: !isCI,
 
           timeout: 120_000,
         },
