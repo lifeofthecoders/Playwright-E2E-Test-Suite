@@ -409,3 +409,24 @@ Thank you for visiting my portfolio!
 ---
 
 **Note:** ShopZone is a demonstration application. Authentication and payment are simulated. No real payment is processed.
+
+
+Expected terminal arrangement
+Terminal 1 — React application
+Must stay running
+
+cd /c/Projects/ecommerce-demo-app
+npm run dev -- --host 127.0.0.1
+
+
+
+
+Terminal 2 — Playwright automation
+Run tests here
+
+cd /c/Projects/Playwright-E2E-Test-Suite
+BASE_URL=http://127.0.0.1:5173 npm test
+
+
+cd /c/Projects/Playwright-E2E-Test-Suite
+BASE_URL=https://shop-zone-ecommerce-demo.vercel.app npm test

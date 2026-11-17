@@ -1,46 +1,98 @@
-import { type Page, type Locator } from '@playwright/test';
-import { BasePage } from './BasePage';
 
-/**
- * CheckoutPage encapsulates interactions with the /checkout page.
- */
-export class CheckoutPage extends BasePage {
-  readonly shippingAddressInput: Locator;
-  readonly paymentInfoInput: Locator;
-  readonly confirmPurchaseButton: Locator;
+import { expect, type Page } from "@playwright/test";
 
-  constructor(page: Page) {
-    super(page);
-    this.shippingAddressInput = page.getByTestId('shipping-address');
-    this.paymentInfoInput = page.getByTestId('payment-info');
-    this.confirmPurchaseButton = page.getByTestId('confirm-purchase-button');
-  }
+export type PaymentMethod = "card" | "cash";
+
+export class CheckoutPage {
+  constructor(private readonly page: Page) {}
 
   /**
-   * Open the checkout page.
+   * Navigate to checkout.
    */
   async goto(): Promise<void> {
-    await this.navigate('/checkout');
+    await this.page.goto("/checkout");
   }
 
   /**
-   * Fill in the shipping address field.
+   * Fill customer name and email.
    */
-  async fillShippingAddress(address: string): Promise<void> {
-    await this.shippingAddressInput.fill(address);
+  async fillCustomerInfo(
+    name: string,
+    email: string
+  ): Promise<void> {
+    const nameInput = this.page.getByTestId("customer-name");
+    const emailInput = this.page.getByTestId("customer-email");
+
+    await expect(nameInput).toBeVisible();
+    await nameInput.fill(name);
+
+    await expect(emailInput).toBeVisible();
+    await emailInput.fill(email);
   }
 
   /**
-   * Fill in the payment information field.
+   * Fill shipping address.
    */
-  async fillPaymentInfo(paymentInfo: string): Promise<void> {
-    await this.paymentInfoInput.fill(paymentInfo);
+  async fillShippingAddress(
+    address: string
+  ): Promise<void> {
+    const addressInput = this.page.getByTestId(
+      "shipping-address"
+    );
+
+    await expect(addressInput).toBeVisible();
+    await addressInput.fill(address);
+  }
+
+  /**
+   * Select Card or Cash on Delivery.
+   */
+  async selectPaymentMethod(
+    method: PaymentMethod
+  ): Promise<void> {
+    const paymentOption = this.page.getByTestId(
+      `payment-method-${method}`
+    );
+
+    await expect(paymentOption).toBeVisible();
+    await paymentOption.check();
+
+    await expect(paymentOption).toBeChecked();
+  }
+
+  /**
+   * Verify the selected payment method.
+   */
+  async verifyPaymentMethod(
+    method: PaymentMethod
+  ): Promise<void> {
+    await expect(
+      this.page.getByTestId(`payment-method-${method}`)
+    ).toBeChecked();
   }
 
   /**
    * Confirm the purchase.
    */
   async confirmPurchase(): Promise<void> {
-    await this.confirmPurchaseButton.click();
+    const confirmButton = this.page.getByTestId(
+      "confirm-purchase-button"
+    );
+
+    await expect(confirmButton).toBeVisible();
+    await expect(confirmButton).toBeEnabled();
+
+    await confirmButton.click();
+  }
+
+  /**
+   * Verify successful order confirmation.
+   */
+  async verifyOrderConfirmation(): Promise<void> {
+    await expect(this.page).toHaveURL(/\/confirmation/);
+
+    await expect(
+      this.page.getByTestId("order-confirmation-message")
+    ).toBeVisible();
   }
 }

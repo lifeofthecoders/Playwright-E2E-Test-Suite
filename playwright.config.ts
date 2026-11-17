@@ -1,64 +1,34 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
-/**
- * Playwright configuration for the e-commerce checkout E2E suite.
- *
- * The target application is expected to be running at BASE_URL
- * (default http://localhost:8080). Override with the BASE_URL env var.
- */
 export default defineConfig({
-  // Where the tests (specs) live.
-  testDir: './tests/specs',
+  testDir: "./tests",
 
-  // Fail the build if a test.only is committed by mistake (CI only).
-  forbidOnly: !!process.env.CI,
+  fullyParallel: false,
 
-  // Run tests in files in parallel.
-  fullyParallel: true,
+  forbidOnly: Boolean(process.env.CI),
 
-  // Retry on CI to smooth over infrastructure flakiness; never locally.
   retries: process.env.CI ? 2 : 0,
 
-  // Opt out of parallel workers on CI for more deterministic runs.
   workers: process.env.CI ? 1 : undefined,
 
-  // HTML report, written to ./playwright-report and not auto-opened.
   reporter: [
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ['list'],
+    ["list"],
+    ["html", { open: "never" }],
   ],
-
-  // Directory for per-test artifacts (screenshots, videos, traces).
-  outputDir: 'test-results',
 
   use: {
-    // Base URL so Page Objects can navigate with relative paths.
-    baseURL: process.env.BASE_URL ?? 'http://localhost:8080',
+    // Use the live application by default.
+    // BASE_URL can override it for other environments.
+    baseURL:
+      process.env.BASE_URL ||
+      "https://shop-zone-ecommerce-demo.vercel.app",
 
-    // Capture a screenshot only when a test fails.
-    screenshot: 'only-on-failure',
+    trace: "retain-on-failure",
 
-    // Keep the video only when a test fails.
-    video: 'retain-on-failure',
+    screenshot: "only-on-failure",
 
-    // Collect a trace on the first retry of a failing test.
-    trace: 'on-first-retry',
+    video: "retain-on-failure",
+
+    ...devices["Desktop Chrome"],
   },
-
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    // Uncomment to run cross-browser. Requires the browsers to be installed
-    // via `npx playwright install --with-deps`.
-    // {
-    //   name: 'firefox',
-    //   use: { ...devices['Desktop Firefox'] },
-    // },
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
-  ],
 });
